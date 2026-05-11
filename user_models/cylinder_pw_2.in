@@ -1,0 +1,67 @@
+## ============================================================================
+## cylinder_pw.in
+## TM_z plane-wave-like excitation on a 2-D PEC cylinder
+##
+## Physics
+##   Source      : Coherent line of z-polarised Hertzian dipoles spanning
+##                 the full aperture at x = x_src, creating an approximate
+##                 TM_z plane wave propagating in +x.
+##                 (For exact TF/SF plane wave use cylinder_pw_runner.py.)
+##   Frequency   : Ricker f_c = 1 GHz  (ka ~ 0.84, Mie regime)
+##   Cylinder    : PEC, r = 40 mm, centred at (200, 200) mm
+##
+## Grid : 400 x 400 x 2 mm  ->  200 x 200 x 1 cells at dx=dy=dz=2 mm
+## PML  : 10 cells on every face
+##
+## The #python: block uses gprMax.input_cmd_funcs (print-wrapper functions)
+## to stamp out 178 #hertzian_dipole: commands spanning y = 22..376 mm.
+##
+## Run (main - with cylinder):
+##   python -m gprMax cylinder_pw.in
+## Run (background - free space, same command but use cylinder_pw_bg.in):
+##   python -m gprMax cylinder_pw_bg.in
+## ============================================================================
+
+#title: cylinder_pw
+
+## --- Grid -------------------------------------------------------------------
+#domain: 0.400 0.400 0.002
+#dx_dy_dz: 0.002 0.002 0.002
+#time_window: 4.5e-9
+
+## --- Waveform ----------------------------------------------------------------
+#waveform: ricker 1 1e9 pw_ricker
+
+## --- Plane-wave source (coherent dipole array) --------------------------------
+## 178 z-polarised Hertzian dipoles at x=0.026 m (one cell outside the 10-cell
+## PML inner edge at 0.020 m), spanning y = 0.022 ... 0.376 m.
+## All dipoles share the same waveform -> approximate TM_z plane wave in +x.
+##
+## NOTE: #python: / #end_python: markers REQUIRE the trailing colon.
+##       Inside the block, gprMax.input_cmd_funcs functions print #command:
+##       lines directly into the processed input stream.
+##
+#python:
+from gprMax.input_cmd_funcs import hertzian_dipole
+dx = 0.002
+x_src = 0.026     # first cell edge inside the PML (10 cells * 0.002 = 0.020)
+z_src = 0.001     # mid-cell in z for 1-cell-thick 2D model
+y_start = 0.022   # first y beyond the PML
+n_dip   = 178     # spans 0.022 to 0.376 m (178 * 0.002 = 0.356 m)
+for i in range(n_dip):
+    y = round(y_start + i * dx, 6)
+    hertzian_dipole('z', x_src, y, z_src, 'pw_ricker')
+#end_python:
+
+## --- PEC cylinder ------------------------------------------------------------
+## Axis along z, centred at (200, 200) mm, radius r = 40 mm
+#cylinder: 0.200 0.200 0.000 0.200 0.200 0.002 0.040 pec
+
+## --- VTK snapshots -----------------------------------------------------------
+## t1 = 1.5 ns : wavefront reaches cylinder (~450 mm / c)
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 1.5e-9 main_snap_t1
+## t2 = 3.5 ns : established scattering pattern
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 3.5e-9 main_snap_t2
+
+## --- Geometry view -----------------------------------------------------------
+#geometry_view: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 cylinder_pw n

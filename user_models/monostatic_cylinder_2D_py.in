@@ -1,0 +1,46 @@
+#python:
+cm = 1e-2
+mm = 1e-3
+ns = 1e-9
+GHz = 1e9
+
+from gprMax.input_cmd_funcs import *
+command('title', 'A from a metal cylinder buried in a dielectric half-space')
+z_dim = 2*mm
+resolution = 2*mm
+tsim = 6*ns
+
+domain = domain(x=64*cm, y=60*cm, z=z_dim)
+dx = dx_dy_dz(resolution, resolution, resolution)
+time_window(tsim)
+
+material(permittivity=6, conductivity=0,
+         permeability=1, magconductivity=0, name='half_space')
+
+identifier = waveform('gaussian', amplitude=1, frequency=1.5*GHz,
+                      identifier='my_ricker')
+
+x_ant = domain.x/2 - 1*cm # in the middle of the x-axis
+
+tx = hertzian_dipole('z',
+                     x_ant, domain.y - 4*cm, 0, # minus 4 cm in y-direction
+                     identifier)
+rx(tx.x + 0*cm, tx.y, tx.z)     # 2 cm away in x-direction from tx
+
+b0, b1 = box(0, 0, 0,
+             domain.x, domain.y - 4*cm, z_dim, # same as domain, minus 4 cm in y-direction
+             'half_space')
+
+c_x, c_y = (domain.x/2, b1.y - 25*cm) # in the middle of the x-axis and 5 cm down from the half_space
+cylinder(c_x, c_y, 0,
+         c_x, c_y, z_dim,
+         radius=1*cm, material='pec')
+
+# Outputs, geometry and snapshots
+geometry_view(0, 0, 0,
+              domain.x, domain.y, domain.z,
+              dx.x, dx.y, dx.z,
+              'cylinder', 'n')
+
+
+#end_python:

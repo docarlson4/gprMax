@@ -1,0 +1,19 @@
+#domain: 0.5 0.5 0.005
+
+#dx_dy_dz: 0.005 0.005 0.005
+
+#time_window: 8.0e-9
+
+#material: 6.0 0.0 1.0 0.0 concrete
+
+#box: 0.0 0.0 0.0 0.5 0.4 0.005 concrete
+
+#cylinder: 0.25 0.3 0 0.25 0.3 0.005 0.02 pec
+
+##tx: 0.20 0.42 1.0 1500e6 ricker trace.out b
+
+#waveform: ricker 1 1.5e9 my_ricker
+
+#hertzian_dipole: z 0.2 0.42 0 my_ricker
+
+#rx: 0.30 0.42 0

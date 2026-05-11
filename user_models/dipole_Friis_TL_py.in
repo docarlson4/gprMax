@@ -1,0 +1,92 @@
+## Command Line
+##           $ python -m gprMax user_models/dipole_Friis_TL_py.in
+##           $ python -m tools.plot_antenna_params user_models/Friis/dipole_Friis_TL_py.out --tltx-num 1 --tlrx-num 2
+## Notepad++
+##          Choose Run/Run..., add this:
+##          C:\Users\dougo\AppData\Local\Programs\Python\Python310\python.exe -i -m gprMax "$(FULL_CURRENT_PATH)"
+#python:
+from gprMax.input_cmd_funcs import *
+from user_libs.antennas.wire_antennas import *
+
+command('title', 'Friis Transmission Test')
+
+## Constants
+cm = 1e-2 # m
+mm = 1e-3 # m
+ns = 1e-9 # s
+GHz = 1e9 # Hz
+c0 = 299792458 # m/s
+
+## Spectrum
+fHz = 1*GHz
+lam = c0/fHz
+
+## Dipole Antenna Length
+lenDipole = lam/2
+
+## Dipole Separation
+zSeparation = lenDipole + 15*cm
+
+## Domain
+margin = 50*cm
+yMax = lenDipole + margin
+xMax = margin
+zMax = zSeparation + margin
+domain = domain(x = xMax, y = yMax, z = zMax)
+
+## Domain Resolution
+resolution = 5*mm
+ds = dx_dy_dz(resolution, resolution, resolution)
+
+## Time Window
+Ts = resolution/(1.73205080757*c0)
+Ns = 2048
+tSim = (Ns-1)*Ts
+time_window(tSim)
+
+#############################
+#           Xmtr            #
+#############################
+
+## Xmtr Waveform
+identifier = waveform(shape = 'ricker', amplitude = 1, frequency = fHz, identifier = 'xmtrPulse')                                                                                                       
+                                                                             
+## Xmtr Transmission Line
+resistance = 50; # Ohm
+zLocXmtr = zMax/2 - zSeparation/2
+
+xmtrTL = transmission_line('y',xMax/2,yMax/2,zLocXmtr,resistance,'xmtrPulse')
+hwd_xmtr = half_wavelength_dipole(xMax/2,yMax/2,zLocXmtr, frequency=fHz, resolution=resolution)
+
+#############################
+#           Rcvr            #
+#############################
+
+#Rcvr Waveform
+identifier = waveform(shape = 'ricker', amplitude = 0.0, frequency = fHz, identifier = 'rcvrPulse')                                                                                                       
+
+## Rcvr Transmission Line
+resistance = 50; # Ohm
+zLocRcvr = zMax/2 + zSeparation/2
+
+rcvrTL = transmission_line('y',xMax/2,yMax/2,zLocRcvr,resistance,'rcvrPulse')
+hwd_rcvr = half_wavelength_dipole(xMax/2,yMax/2,zLocRcvr, frequency=fHz, resolution=resolution)
+
+##geometry_view(0, 0, 0, xMax, yMax, zMax, resolution, resolution, resolution, 'dipole_Friis_VS_py', 'n')
+
+#end_python:
+
+#output_dir: ./Friis
+
+
+
+
+
+
+
+
+
+
+
+
+

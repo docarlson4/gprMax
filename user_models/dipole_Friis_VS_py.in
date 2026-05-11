@@ -1,0 +1,101 @@
+## Command Line
+##           $ python -m gprMax user_models/Friis_TL_no_antennas_py.in
+##           $ python -m tools.plot_antenna_params user_models/Friis_TL_no_antennas_py.out --tltx-num 1 --tlrx-num 2
+
+#python:
+from gprMax.input_cmd_funcs import *
+command('title', 'Friis Transmission Test')
+
+## Constants
+cm = 1e-2 # m
+mm = 1e-3 # m
+ns = 1e-9 # s
+GHz = 1e9 # Hz
+c0 = 299792458 # m/s
+
+## Spectrum
+fHz = 1*GHz
+lam = c0/fHz
+
+## Dipole Antenna Length
+lenDipole = lam/2
+
+## Dipole Separation
+zSeparation = lenDipole + 15*cm
+
+## Domain
+margin = 50*cm
+xMax = lenDipole + margin
+yMax = margin
+zMax = zSeparation + margin
+domain = domain(x = xMax, y = yMax, z = zMax)
+
+## Domain Resolution
+resolution = 5*mm
+ds = dx_dy_dz(resolution, resolution, resolution)
+
+## Time Window
+Ts = resolution/(1.73205080757*c0)
+Ns = 2048
+tSim = (Ns-1)*Ts
+time_window(tSim)
+
+#############################
+#           Xmtr            #
+#############################
+
+## Xmtr Waveform
+identifier = waveform(shape = 'ricker', amplitude = 1, frequency = fHz, identifier = 'xmtrPulse')                                                                                                       
+                                                                             
+## Xmtr Transmission Line
+resistance = 50; # Ohm
+zLocXmtr = zMax/2 - zSeparation/2
+
+#xmtrTL = transmission_line('x',xMax/2,yMax/2,zLocXmtr,resistance,'xmtrPulse')
+xmtrVS = voltage_source('x',xMax/2,yMax/2,zLocXmtr,resistance,'xmtrPulse')
+
+# PEC
+edge(xs = xMax/2-lenDipole/2, ys = yMax/2, zs = zLocXmtr, 
+     xf = xMax/2+lenDipole/2+resolution, yf = yMax/2, zf = zLocXmtr, material = 'pec')
+# Gap
+edge(xs = xMax/2, ys = yMax/2, zs = zLocXmtr, 
+     xf = xMax/2+resolution, yf = yMax/2, zf = zLocXmtr, material = 'free_space')
+
+#############################
+#           Rcvr            #
+#############################
+
+#Rcvr Waveform
+identifier = waveform(shape = 'ricker', amplitude = 0.0, frequency = fHz, identifier = 'rcvrPulse')                                                                                                       
+
+## Rcvr Transmission Line
+resistance = 50; # Ohm
+zLocRcvr = zMax/2 + zSeparation/2
+
+#rcvrTL = transmission_line('x',xMax/2,yMax/2,zLocRcvr,resistance,'rcvrPulse')
+rx(xMax/2,yMax/2,zLocRcvr,'theRcvr','Ex Ey Ez Hx Hy Hz Ix Iy Iz')
+
+# PEC
+edge(xs = xMax/2-lenDipole/2, ys = yMax/2, zs = zLocRcvr, 
+          xf = xMax/2+lenDipole/2+resolution, yf = yMax/2, zf = zLocRcvr, material = 'pec')
+# Gap
+edge(xs = xMax/2, ys = yMax/2, zs = zLocRcvr, 
+     xf = xMax/2+resolution, yf = yMax/2, zf = zLocRcvr, material = 'free_space')
+
+##geometry_view(0, 0, 0, xMax, yMax, zMax, resolution, resolution, resolution, 'dipole_Friis_VS_py', 'n')
+
+#end_python:
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,33 @@
+## ============================================================================
+## cylinder_pw_bg.in   --   BACKGROUND / FREE-SPACE run
+##
+## Identical to cylinder_pw.in except no #cylinder.
+## Post-processing: E_scattered = E_total(main) - E_incident(background)
+## ============================================================================
+
+#title: cylinder_pw_bg
+
+#domain: 0.400 0.400 0.002
+#dx_dy_dz: 0.002 0.002 0.002
+#time_window: 4.5e-9
+
+#waveform: ricker 1 1e9 pw_ricker
+
+#python:
+from gprMax.input_cmd_funcs import hertzian_dipole
+dx = 0.002
+x_src = 0.026
+z_src = 0.001
+y_start = 0.022
+n_dip = 178
+for i in range(n_dip):
+    y = round(y_start + i * dx, 6)
+    hertzian_dipole('z', x_src, y, z_src, 'pw_ricker')
+#end_python:
+
+## NO CYLINDER
+
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 1.5e-9 bg_snap_t1
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 3.5e-9 bg_snap_t2
+
+#geometry_view: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 cylinder_pw_bg n

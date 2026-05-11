@@ -1,0 +1,88 @@
+## ============================================================================
+## cylinder_pw.in
+## TM_z plane wave scattering from a 2-D PEC cylinder
+##
+## Physics
+##   Incident field : Ricker wavelet, f_c = 1 GHz  (ka ≈ 0.84, Mie regime)
+##   Polarisation   : E_z  (TM_z)
+##   Direction      : +x  (phi = 0°, theta = 90° from z-axis)
+##   Source type    : Discrete Plane Wave in TF/SF box (Tan & Potter 2010)
+##                    implemented in gprMax via GSoC 2023 (PR #373)
+##
+## Grid
+##   Domain   400 mm × 400 mm × 2 mm  →  200 × 200 × 1 Yee cells @ 2 mm
+##   PML      10 cells (20 mm) on every face
+##   Courant  dt = dx/(c√3) ≈ 3.85 ps  →  ~1169 steps for 4.5 ns
+##
+## TF/SF box extends from just outside the PML boundary (11 mm clearance)
+## to the opposite face.  Inside the box: total field.  Outside: scattered only.
+##
+## Output
+##   Two VTK snapshots (Ez + all field components) at
+##     t1 = 1.5 ns  – wavefront first intersects the cylinder
+##     t2 = 3.5 ns  – well-established scattering pattern
+##
+## Run as:
+##   python -m gprMax cylinder_pw.in
+## ============================================================================
+
+#title: cylinder_pw
+
+## ── Grid ─────────────────────────────────────────────────────────────────────
+#domain:      0.400 0.400 0.002
+#dx_dy_dz:   0.002 0.002 0.002
+#time_window: 4.5e-9
+
+## ── Waveform ─────────────────────────────────────────────────────────────────
+## Ricker (neg. normalised 2nd derivative of Gaussian), f_c = 1 GHz
+#waveform: ricker 1 1e9 pw_ricker
+
+## ── Plane-wave source (Discrete Plane Wave / TF/SF) ──────────────────────────
+## DiscretePlaneWave was merged into gprMax main branch (GSoC 2023, PR #373).
+## It is invoked through the Python scene-building API inside a #python block.
+##
+## Parameters
+##   p1, p2         : opposite corners of the TF/SF injection box (m)
+##   psi   = 90°    : polarisation angle → E_z (TM_z mode)
+##   phi   =  0°    : azimuthal propagation angle → k in +x direction
+##   theta = 90°    : elevation angle from +z → wave propagates in xy-plane
+##   delta_phi/theta: rational-angle approximation tolerances (degrees)
+##   waveform_id    : must match a #waveform identifier above
+##
+## NOTE: The variable that holds the gprMax scene/model object inside a
+## #python block depends on your gprMax version.  Current builds expose it
+## as 'scene'; if you get a NameError try 'G' (the FDTD grid object) and
+## call G.sources.append(pw) or pw.create(G) instead.
+##
+#python
+from gprMax.sources import DiscretePlaneWave
+
+pw = DiscretePlaneWave(
+    p1=(0.022, 0.022, 0.000),   # TF/SF box lower corner (m)
+    p2=(0.378, 0.378, 0.002),   # TF/SF box upper corner (m)
+    psi=90.0,                    # E_z polarisation
+    phi=0.0,   delta_phi=1.0,    # +x propagation direction
+    theta=90.0, delta_theta=1.0, # horizontal (in xy-plane)
+    waveform_id='pw_ricker'
+)
+scene.add(pw)   # or: G.sources.append(pw) / pw.create(G) — see note above
+#end_python
+
+## ── PEC cylinder ─────────────────────────────────────────────────────────────
+## Axis along z, centred at (200, 200) mm, radius r = 40 mm
+## ka = 2π × 0.040 / 0.300 ≈ 0.84  (Mie scattering regime)
+#cylinder: 0.200 0.200 0.000 0.200 0.200 0.002 0.040 pec
+
+## ── VTK snapshots of all field components ────────────────────────────────────
+## Syntax: x1 y1 z1  x2 y2 z2  ddx ddy ddz  t  identifier
+## Snapshot covers the full domain at the native grid resolution.
+
+## t1 = 1.5 ns  (wave has travelled ~450 mm, cylinder shadow just forming)
+#snapshot: 0 0 0  0.400 0.400 0.002  0.002 0.002 0.002  1.5e-9  main_snap_t1
+
+## t2 = 3.5 ns  (established total- and scattered-field pattern)
+#snapshot: 0 0 0  0.400 0.400 0.002  0.002 0.002 0.002  3.5e-9  main_snap_t2
+
+## ── Geometry view ────────────────────────────────────────────────────────────
+## Produces a VTK file of the material distribution for inspection in ParaView.
+#geometry_view: 0 0 0  0.400 0.400 0.002  0.002 0.002 0.002  cylinder_pw n

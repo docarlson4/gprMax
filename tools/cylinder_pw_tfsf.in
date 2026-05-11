@@ -1,0 +1,42 @@
+#title: cylinder_pw
+
+#domain: 0.400 0.400 0.002
+#dx_dy_dz: 0.002 0.002 0.002
+#time_window: 4.5e-9
+
+#waveform: ricker 1 1e9 pw_ricker
+
+## --- DiscretePlaneWave TF/SF source ---------------------------------
+## psi=90 -> Ez polarisation (TM_z)
+## phi=0, theta=90 -> plane wave propagating in +x direction
+#python:
+try:
+    from gprMax.sources import DiscretePlaneWave
+    pw = DiscretePlaneWave(
+        p1=(0.022, 0.022, 0.000),
+        p2=(0.378, 0.378, 0.002),
+        psi=90.0,
+        phi=0.0, delta_phi=1.0,
+        theta=90.0, delta_theta=1.0,
+        waveform_id='pw_ricker'
+    )
+    ## DiscretePlaneWave registers itself with the active model grid
+    ## when constructed inside a #python: block.
+    ## If this raises AttributeError/TypeError, the internal API
+    ## changed -- inspect gprMax/sources.py for DiscretePlaneWave.
+except ImportError:
+    raise RuntimeError(
+        "DiscretePlaneWave not found.  Pull latest gprMax main branch "
+        "or use cylinder_pw.in (Hertzian dipole approximation) instead."
+    )
+#end_python:
+
+## --- PEC cylinder --------------------------------------------------
+#cylinder: 0.200 0.200 0.000 0.200 0.200 0.002 0.040 pec
+
+## --- Snapshots -------------------------------------------------------
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 1.5e-9 main_snap_t1
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 3.5e-9 main_snap_t2
+
+## --- Geometry view ---------------------------------------------------
+#geometry_view: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 cylinder_pw n

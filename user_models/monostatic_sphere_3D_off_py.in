@@ -1,0 +1,86 @@
+"""
+## Command Line
+##  $ python -m gprMax user_models/monostatic_sphere_3D_py.in
+"""
+#pml_cells: 10
+#python:
+
+from user_libs.antennas.wire_antennas import half_wavelength_dipole
+from gprMax.input_cmd_funcs import *
+
+RUN_SNAPSHOT = False
+
+command('title', 'Scattering from a metal cylinder buried in a dielectric half-space')
+
+## Constants
+cm = 1e-2 # m
+mm = 1e-3 # m
+ns = 1e-9 # s
+GHz = 1e9 # Hz
+c0 = 299792458 # m/s
+
+## Spectrum
+fHz = 6*GHz
+lam = c0/fHz
+
+## Dipole Antenna Length
+lenDipole = lam/2
+
+## Domain
+margin = lam/2
+yMax = lenDipole + margin
+xMax = lenDipole + margin
+zMax = 60*cm
+domain = domain(x = xMax, y = yMax, z = zMax)
+
+## Domain Resolution
+resolution = lam/40
+ds = dx_dy_dz(resolution, resolution, resolution)
+
+## Time Window
+tsim = 10*ns
+time_window(tsim)
+
+## Material Half-Space
+material(permittivity=1, conductivity=0,
+         permeability=1, magconductivity=0, name='half_space')
+b0, b1 = box(0, 0, 0, domain.x, domain.y, domain.z - margin, 'half_space')
+
+
+## Wavefrom Definition
+my_waveform = 'ricker'
+identifier = waveform(my_waveform, amplitude=1, frequency=fHz,
+                      identifier='my_waveform')
+                      
+## Antenna Location
+x_ant = domain.x/2 # in the middle of the x-domain
+y_ant = domain.y/2 # in the middle of the y-domain
+z_ant = b1.z # "margin" down from top of z-domain
+
+## Monostatic Configuration
+tx = voltage_source('y',
+                     x_ant, y_ant, z_ant,
+                     73, identifier)
+                     
+half_wavelength_dipole(tx.x, tx.y, tx.z,
+                       frequency=fHz, resolution=resolution)
+rx(tx.x, tx.y, tx.z)
+
+## Sphere Location
+#   in the middle of the x-y space and X cm down from the half_space
+sphere_x, sphere_y, sphere_z = (domain.x/2, domain.y/2, b1.z - 25*cm)
+sphere(sphere_x, sphere_y, sphere_z, radius=lam/8, material='free_space')
+
+# Outputs, geometry and snapshots
+geometry_view(0, 0, 0,
+              domain.x, domain.y, domain.z,
+              ds.x, ds.y, ds.z,
+              'sphere', 'n')
+
+if RUN_SNAPSHOT:
+    N = 32
+    for i in range(1, N+1):
+        snapshot(domain.x/2, 0, 0,
+                 domain.x/2+ds.x, domain.y, domain.z,
+                 ds.x, ds.y, ds.z, i*(tsim/N), 'snapshot' + str(i))
+#end_python:

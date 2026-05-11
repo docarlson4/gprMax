@@ -1,0 +1,48 @@
+## ============================================================================
+## cylinder_pw_bg.in   --   BACKGROUND / FREE-SPACE run
+##
+## Identical to cylinder_pw.in except the PEC cylinder is absent.
+## Running both gives:
+##   E_total     = output of cylinder_pw.in
+##   E_incident  = output of cylinder_pw_bg.in  (same TF/SF, no scatterer)
+##   E_scattered = E_total - E_incident          (computed in post-processing)
+##
+## Run:
+##   python -m gprMax cylinder_pw_bg.in
+## ============================================================================
+
+#title: cylinder_pw_bg
+
+## --- Grid -------------------------------------------------------------------
+#domain: 0.400 0.400 0.002
+#dx_dy_dz: 0.002 0.002 0.002
+#time_window: 4.5e-9
+
+## --- Waveform ----------------------------------------------------------------
+#waveform: ricker 1 1e9 pw_ricker
+
+## --- Plane-wave source (identical to main run) --------------------------------
+#python
+from gprMax.sources import DiscretePlaneWave
+
+pw = DiscretePlaneWave(
+    p1=(0.022, 0.022, 0.000),
+    p2=(0.378, 0.378, 0.002),
+    psi=90.0,
+    phi=0.0,
+    delta_phi=1.0,
+    theta=90.0,
+    delta_theta=1.0,
+    waveform_id='pw_ricker'
+)
+scene.add(pw)
+#end_python
+
+## --- NO CYLINDER in this run -------------------------------------------------
+
+## --- VTK snapshots (same times as main run) ----------------------------------
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 1.5e-9 bg_snap_t1
+#snapshot: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 3.5e-9 bg_snap_t2
+
+## --- Geometry view -----------------------------------------------------------
+#geometry_view: 0 0 0 0.400 0.400 0.002 0.002 0.002 0.002 cylinder_pw_bg n
