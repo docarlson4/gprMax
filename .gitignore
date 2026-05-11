@@ -21,5 +21,11 @@ dist/
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
 
-# gprMAx
+# gprMax output
+*.out
+*.vtp
 *.vti
+*.txt
+*.pdf
+*.asv
+*.npy
